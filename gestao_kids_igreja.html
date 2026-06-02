@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gestão Kids — Igreja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f4f3ef;
+  --surface:#ffffff;
+  --border:#e2e0d8;
+  --primary:#2d6a4f;
+  --primary-light:#d8f3dc;
+  --primary-dark:#1b4332;
+  --accent:#f4845f;
+  --text:#1c1917;
+  --muted:#6b7280;
+  --success:#16a34a;
+  --danger:#dc2626;
+  --warn:#d97706;
+  --radius:14px;
+  --shadow:0 2px 12px rgba(0,0,0,.06);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+aside{width:240px;background:var(--primary-dark);color:#fff;padding:24px 16px;display:flex;flex-direction:column;gap:4px;position:fixed;height:100vh;overflow-y:auto;z-index:100}
+.brand{padding:8px 12px 20px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:8px}
+.brand h1{font-family:'DM Serif Display',serif;font-size:20px;color:#fff}
+.brand p{font-size:12px;color:rgba(255,255,255,.5);margin-top:4px}
+.nav-section{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);padding:12px 12px 4px;margin-top:8px}
+.menu-btn{border:none;background:transparent;text-align:left;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:500;color:rgba(255,255,255,.7);width:100%;display:flex;align-items:center;gap:10px;transition:.15s;font-family:'DM Sans',sans-serif}
+.menu-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+.menu-btn.active{background:rgba(255,255,255,.18);color:#fff}
+main{flex:1;margin-left:240px;padding:28px;min-height:100vh}
+.page{display:none}
+.page.active{display:block}
+.page-header{margin-bottom:24px}
+.page-header h2{font-family:'DM Serif Display',serif;font-size:28px;color:var(--primary-dark)}
+.page-header p{color:var(--muted);font-size:14px;margin-top:4px}
+.card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:20px;box-shadow:var(--shadow)}
+.cards-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:16px 20px;box-shadow:var(--shadow)}
+.metric-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.metric-value{font-size:28px;font-weight:600}
+.metric-value.green{color:var(--success)}
+.metric-value.red{color:var(--danger)}
+.metric-value.primary{color:var(--primary)}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+label{font-size:13px;font-weight:500;color:var(--muted);display:block;margin-bottom:6px}
+input,select,textarea{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;background:var(--surface);color:var(--text);transition:.15s}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(45,106,79,.1)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.full{grid-column:1/-1}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.btn{border:none;border-radius:10px;padding:10px 20px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{transform:translateY(-1px)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--primary-dark)}
+.btn-secondary{background:var(--primary-light);color:var(--primary-dark)}
+.btn-danger{background:#fee2e2;color:var(--danger)}
+.btn-sm{padding:6px 12px;font-size:13px}
+.badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600}
+.badge-in{background:#dcfce7;color:#166534}
+.badge-out{background:#fee2e2;color:#991b1b}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:12px 14px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);background:#fafaf8}
+td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:14px}
+tr:hover td{background:#fafaf8}
+.kid-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.kid-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;transition:.15s}
+.kid-card:hover{border-color:var(--primary);box-shadow:0 4px 14px rgba(45,106,79,.1)}
+.kid-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;margin-bottom:10px}
+.diario-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.alert{border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.alert-success{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+.alert-error{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.alert-info{background:#e0f2fe;color:#0c4a6e;border:1px solid #bae6fd}
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.filter-bar input,.filter-bar select{width:auto;flex:1;min-width:140px}
+.tabs{display:flex;gap:4px;background:#f3f2ef;border-radius:10px;padding:4px;margin-bottom:20px;width:fit-content}
+.tab{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);border:none;background:transparent;font-family:'DM Sans',sans-serif;transition:.15s}
+.tab.active{background:#fff;color:var(--primary-dark);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted)}
+.totals-bar{display:flex;gap:16px;align-items:center;padding:10px 14px;background:var(--primary-light);border-radius:10px;margin-bottom:16px;flex-wrap:wrap}
+.totals-bar span{font-size:13px;font-weight:500;color:var(--primary-dark)}
+.presenca-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:12px}
+.presenca-item{border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:.15s}
+.presenca-item:hover{border-color:var(--primary)}
+.presenca-item.presente{background:#dcfce7;border-color:#86efac}
+.presenca-item .pname{font-size:13px;font-weight:500}
+.presenca-item .pres-badge{font-size:11px;color:var(--muted)}
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.8);display:flex;align-items:center;justify-content:center;z-index:999;font-size:14px;color:var(--muted);gap:10px}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:900px){
+  aside{width:200px}
+  main{margin-left:200px;padding:18px}
+  .charts-row{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <span>Conectando ao banco de dados...</span>
+</div>
+
+<aside>
+  <div class="brand">
+    <h1>Gestão Kids</h1>
+    <p>Igreja — Sistema Online</p>
+  </div>
+  <span class="nav-section">Financeiro</span>
+  <button class="menu-btn active" onclick="openPage('dashboard',this)">&#9632; Dashboard</button>
+  <button class="menu-btn" onclick="openPage('lancamentos',this)">+ Novo Lançamento</button>
+  <button class="menu-btn" onclick="openPage('historico',this)">&#9776; Histórico</button>
+  <button class="menu-btn" onclick="openPage('relatorios',this)">&#9998; Relatórios</button>
+  <span class="nav-section">Crianças</span>
+  <button class="menu-btn" onclick="openPage('criancas',this)">&#9786; Cadastro</button>
+  <button class="menu-btn" onclick="openPage('diario',this)">&#9998; Diário</button>
+  <button class="menu-btn" onclick="openPage('presenca',this)">&#10003; Presença</button>
+  <span class="nav-section">Sistema</span>
+  <button class="menu-btn" onclick="openPage('categorias',this)">&#9670; Categorias</button>
+</aside>
+
+<main>
+
+<!-- DASHBOARD -->
+<section id="dashboard" class="page active">
+  <div class="page-header">
+    <h2>Dashboard</h2>
+    <p>Visão geral do financeiro e das crianças</p>
+  </div>
+  <div class="filter-bar" style="margin-bottom:18px">
+    <select id="dash-mes" onchange="renderDashboard()">
+      <option value="">Todos os meses</option>
+      <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
+      <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
+      <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
+      <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+    </select>
+    <select id="dash-ano" onchange="renderDashboard()">
+      <option value="">Todos os anos</option>
+    </select>
+  </div>
+  <div class="cards-row" id="dash-cards"></div>
+  <div class="charts-row">
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:14px;font-size:14px">Gastos por Categoria</div>
+      <div style="position:relative;height:220px"><canvas id="chartPizza"></canvas></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:14px;font-size:14px">Fluxo Mensal (últimos 6 meses)</div>
+      <div style="position:relative;height:220px"><canvas id="chartBarra"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:14px;font-size:14px">Últimos Lançamentos</div>
+    <div id="dash-ultimos"></div>
+  </div>
+</section>
+
+<!-- LANÇAMENTOS -->
+<section id="lancamentos" class="page">
+  <div class="page-header">
+    <h2>Novo Lançamento</h2>
+    <p>Registre entradas e saídas com facilidade</p>
+  </div>
+  <div id="lanc-alert"></div>
+  <!-- Rápido -->
+  <div class="card" style="margin-bottom:16px;border-left:4px solid var(--primary)">
+    <div style="font-size:13px;font-weight:600;color:var(--primary-dark);margin-bottom:12px">⚡ Lançamento Rápido</div>
+    <div style="display:grid;grid-template-columns:120px 1fr 160px 120px auto;gap:10px;align-items:end;flex-wrap:wrap">
+      <div class="form-group"><label>Tipo</label>
+        <select id="rq-tipo"><option value="entrada">Entrada</option><option value="saida">Saída</option></select></div>
+      <div class="form-group"><label>Descrição</label><input id="rq-desc" type="text" placeholder="Ex: Mensalidade Ana"></div>
+      <div class="form-group"><label>Categoria</label><select id="rq-cat"></select></div>
+      <div class="form-group"><label>Valor (R$)</label><input id="rq-val" type="number" placeholder="0,00" step="0.01" min="0"></div>
+      <button class="btn btn-primary" onclick="lancRapido()" style="height:42px" id="rq-btn">+</button>
+    </div>
+  </div>
+  <!-- Detalhado -->
+  <div class="card">
+    <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:16px">Lançamento Detalhado</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Tipo</label>
+        <select id="l-tipo"><option value="entrada">Entrada</option><option value="saida">Saída</option></select></div>
+      <div class="form-group"><label>Data</label><input type="date" id="l-data"></div>
+      <div class="form-group"><label>Categoria</label><select id="l-cat"></select></div>
+      <div class="form-group"><label>Valor (R$)</label><input type="number" id="l-valor" placeholder="0,00" step="0.01" min="0"></div>
+      <div class="form-group"><label>Criança (opcional)</label><select id="l-crianca"><option value="">— Nenhuma —</option></select></div>
+      <div class="form-group"><label>Responsável</label><input type="text" id="l-resp" placeholder="Nome do responsável"></div>
+      <div class="form-group full"><label>Descrição / Observação</label>
+        <textarea id="l-desc" rows="3" placeholder="Detalhes do lançamento..."></textarea></div>
+    </div>
+    <button class="btn btn-primary" onclick="salvarLancamento()" id="lanc-btn">💾 Salvar Lançamento</button>
+  </div>
+</section>
+
+<!-- HISTÓRICO -->
+<section id="historico" class="page">
+  <div class="page-header"><h2>Histórico de Lançamentos</h2><p>Todos os registros financeiros</p></div>
+  <div class="filter-bar">
+    <input type="text" placeholder="Buscar..." id="hist-busca" oninput="renderHistorico()">
+    <select id="hist-tipo" onchange="renderHistorico()"><option value="">Todos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select>
+    <select id="hist-mes" onchange="renderHistorico()">
+      <option value="">Todos os meses</option>
+      <option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option>
+      <option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option>
+      <option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option>
+      <option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
+    </select>
+    <select id="hist-cat" onchange="renderHistorico()"><option value="">Todas as categorias</option></select>
+    <button class="btn btn-secondary btn-sm" onclick="exportarCSV()">↓ Exportar CSV</button>
+  </div>
+  <div id="hist-totals" class="totals-bar"></div>
+  <div class="card" style="overflow-x:auto">
+    <table><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Criança</th><th>Responsável</th><th>Descrição</th><th>Valor</th><th></th></tr></thead>
+    <tbody id="hist-tbody"></tbody></table>
+  </div>
+</section>
+
+<!-- RELATÓRIOS -->
+<section id="relatorios" class="page">
+  <div class="page-header"><h2>Relatórios</h2><p>Análise financeira detalhada</p></div>
+  <div class="filter-bar" style="margin-bottom:20px">
+    <select id="rel-mes" onchange="renderRelatorio()">
+      <option value="">Todos os meses</option>
+      <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
+      <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
+      <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
+      <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+    </select>
+    <select id="rel-ano" onchange="renderRelatorio()"><option value="">Todos os anos</option></select>
+  </div>
+  <div id="rel-conteudo"></div>
+</section>
+
+<!-- CRIANÇAS -->
+<section id="criancas" class="page">
+  <div class="page-header"><h2>Cadastro de Crianças</h2><p>Gerencie as crianças e seus responsáveis</p></div>
+  <div id="cri-alert"></div>
+  <div class="card" style="margin-bottom:20px">
+    <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:14px" id="cri-form-title">Nova Criança</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Nome da Criança</label><input type="text" id="c-nome"></div>
+      <div class="form-group"><label>Data de Nascimento</label><input type="date" id="c-nasc"></div>
+      <div class="form-group"><label>Responsável</label><input type="text" id="c-resp"></div>
+      <div class="form-group"><label>Telefone</label><input type="text" id="c-tel" placeholder="(21) 9 9999-9999"></div>
+      <div class="form-group full"><label>Observações / Alergias / Necessidades</label>
+        <textarea id="c-obs" rows="2" placeholder="Ex: alergia a amendoim..."></textarea></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="salvarCrianca()" id="cri-btn">💾 <span id="cri-btn-txt">Cadastrar</span></button>
+      <button class="btn btn-secondary" id="cri-cancel" style="display:none" onclick="cancelarEditCrianca()">Cancelar</button>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <input type="text" placeholder="Buscar criança..." id="cri-busca" oninput="renderCriancas()" style="max-width:280px">
+    <span id="cri-count" style="font-size:13px;color:var(--muted)"></span>
+  </div>
+  <div class="kid-grid" id="kid-grid"></div>
+</section>
+
+<!-- DIÁRIO -->
+<section id="diario" class="page">
+  <div class="page-header"><h2>Diário das Crianças</h2><p>Registre o dia a dia, comportamento e observações</p></div>
+  <div class="tabs">
+    <button class="tab active" onclick="diarioTab('novo',this)">Novo Registro</button>
+    <button class="tab" onclick="diarioTab('ver',this)">Ver Registros</button>
+  </div>
+  <div id="diario-novo">
+    <div id="diario-alert"></div>
+    <div class="card">
+      <div class="form-grid">
+        <div class="form-group"><label>Criança</label><select id="d-crianca"><option value="">Selecione...</option></select></div>
+        <div class="form-group"><label>Data</label><input type="date" id="d-data"></div>
+        <div class="form-group"><label>Humor / Estado</label>
+          <select id="d-humor">
+            <option value="feliz">😊 Feliz / Animada</option>
+            <option value="normal">😐 Normal / Calma</option>
+            <option value="triste">😢 Triste / Quieta</option>
+            <option value="agitado">🌀 Agitada / Hiperativa</option>
+          </select></div>
+        <div class="form-group"><label>Participação nas Atividades</label>
+          <select id="d-participacao">
+            <option value="excelente">Excelente</option><option value="boa">Boa</option>
+            <option value="regular">Regular</option><option value="baixa">Baixa</option>
+          </select></div>
+        <div class="form-group full"><label>Anotações do Dia</label>
+          <textarea id="d-anotacao" rows="4" placeholder="Como a criança estava hoje, o que aprendeu, comportamento..."></textarea></div>
+        <div class="form-group"><label>Recado para os pais (opcional)</label>
+          <textarea id="d-recado" rows="2" placeholder="Algum recado para levar aos pais..."></textarea></div>
+        <div class="form-group"><label>Necessidade especial hoje (opcional)</label>
+          <input type="text" id="d-nec" placeholder="Ex: medicamento às 14h"></div>
+      </div>
+      <button class="btn btn-primary" onclick="salvarDiario()" id="diario-btn">📓 Salvar Registro</button>
+    </div>
+  </div>
+  <div id="diario-ver" style="display:none">
+    <div class="filter-bar">
+      <select id="dv-crianca" onchange="renderDiario()"><option value="">Todas as crianças</option></select>
+      <input type="month" id="dv-mes" onchange="renderDiario()">
+    </div>
+    <div id="diario-lista"></div>
+  </div>
+</section>
+
+<!-- PRESENÇA -->
+<section id="presenca" class="page">
+  <div class="page-header"><h2>Lista de Presença</h2><p>Registre a presença das crianças por data</p></div>
+  <div style="display:flex;gap:12px;align-items:end;margin-bottom:16px;flex-wrap:wrap">
+    <div class="form-group" style="flex:0 0 200px">
+      <label>Data</label><input type="date" id="pres-data" onchange="carregarPresenca()">
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="salvarPresenca()" id="pres-btn">💾 Salvar</button>
+    <button class="btn btn-secondary btn-sm" onclick="marcarTodos(true)">✓ Todos presentes</button>
+    <button class="btn btn-secondary btn-sm" onclick="marcarTodos(false)">Todos ausentes</button>
+  </div>
+  <div id="pres-resumo" style="font-size:13px;color:var(--muted);margin-bottom:12px"></div>
+  <div class="presenca-grid" id="pres-grid"></div>
+  <div style="margin-top:24px" class="card">
+    <div style="font-weight:600;font-size:14px;margin-bottom:12px">Histórico de Presença</div>
+    <div class="filter-bar">
+      <select id="phist-crianca" onchange="renderPresHistorico()"><option value="">Todas as crianças</option></select>
+    </div>
+    <div id="pres-historico"></div>
+  </div>
+</section>
+
+<!-- CATEGORIAS -->
+<section id="categorias" class="page">
+  <div class="page-header"><h2>Categorias</h2><p>Gerencie as categorias financeiras</p></div>
+  <div id="cat-alert"></div>
+  <div class="card" style="margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
+      <div class="form-group"><label>Nome da Categoria</label><input type="text" id="cat-nome" placeholder="Ex: Dízimo, Festa Junina..."></div>
+      <div class="form-group"><label>Tipo</label><select id="cat-tipo"><option value="entrada">Entrada</option><option value="saida">Saída</option></select></div>
+      <button class="btn btn-primary" onclick="salvarCategoria()" style="height:42px;margin-top:24px">+ Adicionar</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="cat-grid"></div>
+</section>
+
+</main>
+
+<script>
+// ===================== SUPABASE CONFIG =====================
+const SUPABASE_URL = 'https://ujoygqapgpfzhzwvhupl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqb3lncWFwZ3Bmemh6d3ZodXBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MDg5MDQsImV4cCI6MjA5NTk4NDkwNH0.fxfdLd5JNTyUXJtS3g6D6uHzUZST92nmI1CjzUmCFUI';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ===================== CACHE LOCAL =====================
+let CACHE = { categorias: [], criancas: [], lancamentos: [], diario: [], presenca: [] };
+let presencaTemp = {};
+let editCriancaId = null;
+let chartPizza = null, chartBarra = null;
+
+// ===================== HELPERS =====================
+function fmtData(d){ if(!d) return '—'; const p=d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+function fmtVal(v){ return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function getCatNome(id){ const c=CACHE.categorias.find(x=>x.id===id); return c?c.nome:'—'; }
+function getCriancaNome(id){ const c=CACHE.criancas.find(x=>x.id===id); return c?c.nome:'—'; }
+function avatarColor(nome){ const cores=['#2d6a4f','#1d6986','#7b5ea7','#b45309','#be3a5c']; let h=0; for(let c of nome) h+=c.charCodeAt(0); return cores[h%cores.length]; }
+function initials(nome){ return nome.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase(); }
+function showAlert(id,msg,type='success'){
+  document.getElementById(id).innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(()=>{ const el=document.getElementById(id); if(el) el.innerHTML=''; },4000);
+}
+function setLoading(show){ document.getElementById('loading').style.display=show?'flex':'none'; }
+function setBtnLoading(id,loading,txt=''){
+  const b=document.getElementById(id); if(!b) return;
+  b.disabled=loading; if(txt) b.innerHTML=loading?'<div class="spinner" style="width:16px;height:16px;border-width:2px"></div> Salvando...':txt;
+}
+
+// ===================== NAVIGATION =====================
+function openPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.menu-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='dashboard') renderDashboard();
+  if(id==='historico') renderHistorico();
+  if(id==='criancas') renderCriancas();
+  if(id==='categorias') renderCategorias();
+  if(id==='relatorios') renderRelatorio();
+  if(id==='diario') renderDiario();
+  if(id==='presenca'){ document.getElementById('pres-data').value=today(); carregarPresenca(); }
+}
+function today(){ return new Date().toISOString().split('T')[0]; }
+
+// ===================== LOAD ALL DATA =====================
+async function loadAll(){
+  setLoading(true);
+  try {
+    const [cats, kids, lancs, diarios, presas] = await Promise.all([
+      sb.from('categorias').select('*').order('nome'),
+      sb.from('criancas').select('*').order('nome'),
+      sb.from('lancamentos').select('*').order('data', {ascending:false}),
+      sb.from('diario').select('*').order('data', {ascending:false}),
+      sb.from('presenca').select('*').order('data', {ascending:false}),
+    ]);
+    CACHE.categorias = cats.data || [];
+    CACHE.criancas   = kids.data || [];
+    CACHE.lancamentos= lancs.data || [];
+    CACHE.diario     = diarios.data || [];
+    CACHE.presenca   = presas.data || [];
+    populateSelects();
+    renderDashboard();
+  } catch(e){
+    showAlert('lanc-alert','Erro ao conectar ao banco: '+e.message,'error');
+  }
+  setLoading(false);
+}
+
+function populateSelects(){
+  // Categorias nos selects
+  ['l-cat','rq-cat'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const v=el.value; el.innerHTML='';
+    CACHE.categorias.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.nome; el.appendChild(o); });
+    if(v) el.value=v;
+  });
+  const hc=document.getElementById('hist-cat');
+  if(hc){ hc.innerHTML='<option value="">Todas as categorias</option>'; CACHE.categorias.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.nome; hc.appendChild(o); }); }
+  // Crianças nos selects
+  ['l-crianca','d-crianca','dv-crianca','phist-crianca'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const v=el.value;
+    const prefix = (id==='l-crianca') ? '<option value="">— Nenhuma —</option>' : '<option value="">Todas as crianças</option>';
+    if(id==='d-crianca') el.innerHTML='<option value="">Selecione...</option>';
+    else el.innerHTML=prefix;
+    CACHE.criancas.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.nome; el.appendChild(o); });
+    if(v) el.value=v;
+  });
+  // Anos
+  const anos=[...new Set(CACHE.lancamentos.map(l=>l.data.split('-')[0]))].sort().reverse();
+  const thisYear=new Date().getFullYear().toString();
+  if(!anos.includes(thisYear)) anos.unshift(thisYear);
+  ['dash-ano','rel-ano'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const v=el.value; el.innerHTML='<option value="">Todos os anos</option>';
+    anos.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; el.appendChild(o); });
+    if(v) el.value=v;
+  });
+}
+
+// ===================== LANÇAMENTOS =====================
+async function salvarLancamento(){
+  const tipo=document.getElementById('l-tipo').value;
+  const data=document.getElementById('l-data').value;
+  const cat=document.getElementById('l-cat').value;
+  const valor=parseFloat(document.getElementById('l-valor').value);
+  const desc=document.getElementById('l-desc').value.trim();
+  const crianca=document.getElementById('l-crianca').value||null;
+  const resp=document.getElementById('l-resp').value.trim()||null;
+  if(!data||!cat||!valor||valor<=0||!desc){ showAlert('lanc-alert','Preencha data, categoria, valor e descrição.','error'); return; }
+  setBtnLoading('lanc-btn',true);
+  const {data:row,error}=await sb.from('lancamentos').insert({tipo,data,categoria_id:cat,valor,descricao:desc,crianca_id:crianca,responsavel:resp}).select().single();
+  if(error){ showAlert('lanc-alert','Erro: '+error.message,'error'); }
+  else {
+    CACHE.lancamentos.unshift(row);
+    showAlert('lanc-alert','Lançamento salvo com sucesso!');
+    document.getElementById('l-valor').value='';
+    document.getElementById('l-desc').value='';
+    document.getElementById('l-resp').value='';
+    document.getElementById('l-crianca').value='';
+    populateSelects();
+  }
+  setBtnLoading('lanc-btn',false,'💾 Salvar Lançamento');
+}
+
+async function lancRapido(){
+  const tipo=document.getElementById('rq-tipo').value;
+  const desc=document.getElementById('rq-desc').value.trim();
+  const cat=document.getElementById('rq-cat').value;
+  const val=parseFloat(document.getElementById('rq-val').value);
+  if(!desc||!cat||!val||val<=0){ showAlert('lanc-alert','Preencha descrição, categoria e valor.','error'); return; }
+  setBtnLoading('rq-btn',true);
+  const {data:row,error}=await sb.from('lancamentos').insert({tipo,data:today(),categoria_id:cat,valor:val,descricao:desc}).select().single();
+  if(error){ showAlert('lanc-alert','Erro: '+error.message,'error'); }
+  else {
+    CACHE.lancamentos.unshift(row);
+    showAlert('lanc-alert','Lançamento rápido salvo!');
+    document.getElementById('rq-desc').value='';
+    document.getElementById('rq-val').value='';
+    populateSelects();
+  }
+  setBtnLoading('rq-btn',false,'+');
+}
+
+async function deletarLancamento(id){
+  if(!confirm('Excluir este lançamento?')) return;
+  const {error}=await sb.from('lancamentos').delete().eq('id',id);
+  if(error){ alert('Erro: '+error.message); return; }
+  CACHE.lancamentos=CACHE.lancamentos.filter(l=>l.id!==id);
+  renderHistorico(); renderDashboard();
+}
+
+// ===================== HISTÓRICO =====================
+function filtrarLancamentos(){
+  const busca=document.getElementById('hist-busca').value.toLowerCase();
+  const tipo=document.getElementById('hist-tipo').value;
+  const mes=document.getElementById('hist-mes').value;
+  const cat=document.getElementById('hist-cat').value;
+  return CACHE.lancamentos.filter(l=>{
+    if(tipo&&l.tipo!==tipo) return false;
+    if(mes&&l.data.split('-')[1]!==mes) return false;
+    if(cat&&l.categoria_id!==cat) return false;
+    if(busca&&!l.descricao?.toLowerCase().includes(busca)&&!getCatNome(l.categoria_id).toLowerCase().includes(busca)) return false;
+    return true;
+  });
+}
+function renderHistorico(){
+  const items=filtrarLancamentos();
+  const ent=items.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+Number(l.valor),0);
+  const sai=items.filter(l=>l.tipo==='saida').reduce((s,l)=>s+Number(l.valor),0);
+  document.getElementById('hist-totals').innerHTML=
+    `<span>⬆ Entradas: <strong>${fmtVal(ent)}</strong></span>
+     <span style="color:var(--border)">|</span>
+     <span>⬇ Saídas: <strong>${fmtVal(sai)}</strong></span>
+     <span style="color:var(--border)">|</span>
+     <span>Saldo: <strong style="color:${ent-sai>=0?'var(--success)':'var(--danger)'}">${fmtVal(ent-sai)}</strong></span>
+     <span style="color:var(--muted);margin-left:auto">${items.length} registros</span>`;
+  const tbody=document.getElementById('hist-tbody');
+  if(!items.length){ tbody.innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">Nenhum lançamento encontrado</td></tr>`; return; }
+  tbody.innerHTML=items.map(l=>`
+    <tr>
+      <td>${fmtData(l.data)}</td>
+      <td><span class="badge badge-${l.tipo==='entrada'?'in':'out'}">${l.tipo==='entrada'?'Entrada':'Saída'}</span></td>
+      <td>${getCatNome(l.categoria_id)}</td>
+      <td>${l.crianca_id?getCriancaNome(l.crianca_id):'—'}</td>
+      <td>${l.responsavel||'—'}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.descricao||''}</td>
+      <td style="font-weight:600;color:${l.tipo==='entrada'?'var(--success)':'var(--danger)'}">${fmtVal(l.valor)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deletarLancamento('${l.id}')">✕</button></td>
+    </tr>`).join('');
+}
+function exportarCSV(){
+  const rows=[['Data','Tipo','Categoria','Criança','Responsável','Descrição','Valor']];
+  CACHE.lancamentos.forEach(l=>{
+    rows.push([fmtData(l.data),l.tipo,getCatNome(l.categoria_id),l.crianca_id?getCriancaNome(l.crianca_id):'',l.responsavel||'',l.descricao||'',l.valor]);
+  });
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='lancamentos.csv'; a.click();
+}
+
+// ===================== DASHBOARD =====================
+function filtrarPorPeriodo(lista){
+  const mes=document.getElementById('dash-mes').value;
+  const ano=document.getElementById('dash-ano').value;
+  return lista.filter(l=>{
+    if(mes&&l.data.split('-')[1]!==mes) return false;
+    if(ano&&l.data.split('-')[0]!==ano) return false;
+    return true;
+  });
+}
+function renderDashboard(){
+  const items=filtrarPorPeriodo(CACHE.lancamentos);
+  const ent=items.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+Number(l.valor),0);
+  const sai=items.filter(l=>l.tipo==='saida').reduce((s,l)=>s+Number(l.valor),0);
+  document.getElementById('dash-cards').innerHTML=`
+    <div class="metric-card"><div class="metric-label">Saldo</div><div class="metric-value ${ent-sai>=0?'green':'red'}">${fmtVal(ent-sai)}</div></div>
+    <div class="metric-card"><div class="metric-label">Entradas</div><div class="metric-value green">${fmtVal(ent)}</div></div>
+    <div class="metric-card"><div class="metric-label">Saídas</div><div class="metric-value red">${fmtVal(sai)}</div></div>
+    <div class="metric-card"><div class="metric-label">Crianças</div><div class="metric-value primary">${CACHE.criancas.length}</div></div>`;
+  // Pizza
+  const catData={};
+  items.filter(l=>l.tipo==='saida').forEach(l=>{ const n=getCatNome(l.categoria_id); catData[n]=(catData[n]||0)+Number(l.valor); });
+  const COLORS=['#2d6a4f','#52b788','#f4845f','#f4a261','#e9c46a','#264653'];
+  if(chartPizza) chartPizza.destroy();
+  if(Object.keys(catData).length){
+    chartPizza=new Chart(document.getElementById('chartPizza'),{type:'doughnut',
+      data:{labels:Object.keys(catData),datasets:[{data:Object.values(catData),backgroundColor:COLORS,borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}}});
+  }
+  // Barras 6 meses
+  const now=new Date();
+  const meses=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    meses.push({label:d.toLocaleString('pt-BR',{month:'short'}),m:(d.getMonth()+1).toString().padStart(2,'0'),a:d.getFullYear().toString()});
+  }
+  const entMes=meses.map(m=>CACHE.lancamentos.filter(l=>l.tipo==='entrada'&&l.data.split('-')[1]===m.m&&l.data.split('-')[0]===m.a).reduce((s,l)=>s+Number(l.valor),0));
+  const saiMes=meses.map(m=>CACHE.lancamentos.filter(l=>l.tipo==='saida'&&l.data.split('-')[1]===m.m&&l.data.split('-')[0]===m.a).reduce((s,l)=>s+Number(l.valor),0));
+  if(chartBarra) chartBarra.destroy();
+  chartBarra=new Chart(document.getElementById('chartBarra'),{type:'bar',
+    data:{labels:meses.map(m=>m.label),datasets:[{label:'Entradas',data:entMes,backgroundColor:'#52b788'},{label:'Saídas',data:saiMes,backgroundColor:'#f4845f'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});
+  // Últimos
+  const ult=CACHE.lancamentos.slice(0,8);
+  document.getElementById('dash-ultimos').innerHTML=ult.length?`
+    <table><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor</th></tr></thead>
+    <tbody>${ult.map(l=>`<tr>
+      <td>${fmtData(l.data)}</td>
+      <td><span class="badge badge-${l.tipo==='entrada'?'in':'out'}">${l.tipo==='entrada'?'Entrada':'Saída'}</span></td>
+      <td>${getCatNome(l.categoria_id)}</td>
+      <td>${l.descricao||''}</td>
+      <td style="font-weight:600;color:${l.tipo==='entrada'?'var(--success)':'var(--danger)'}">${fmtVal(l.valor)}</td>
+    </tr>`).join('')}</tbody></table>`
+  :'<div class="empty-state">Nenhum lançamento ainda</div>';
+}
+
+// ===================== RELATÓRIOS =====================
+function renderRelatorio(){
+  const mes=document.getElementById('rel-mes').value;
+  const ano=document.getElementById('rel-ano').value;
+  const items=CACHE.lancamentos.filter(l=>{
+    if(mes&&l.data.split('-')[1]!==mes) return false;
+    if(ano&&l.data.split('-')[0]!==ano) return false;
+    return true;
+  });
+  const ent=items.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+Number(l.valor),0);
+  const sai=items.filter(l=>l.tipo==='saida').reduce((s,l)=>s+Number(l.valor),0);
+  const catSai={},catEnt={};
+  items.filter(l=>l.tipo==='saida').forEach(l=>{const n=getCatNome(l.categoria_id);catSai[n]=(catSai[n]||0)+Number(l.valor);});
+  items.filter(l=>l.tipo==='entrada').forEach(l=>{const n=getCatNome(l.categoria_id);catEnt[n]=(catEnt[n]||0)+Number(l.valor);});
+  document.getElementById('rel-conteudo').innerHTML=`
+    <div class="cards-row">
+      <div class="metric-card"><div class="metric-label">Total Entradas</div><div class="metric-value green">${fmtVal(ent)}</div></div>
+      <div class="metric-card"><div class="metric-label">Total Saídas</div><div class="metric-value red">${fmtVal(sai)}</div></div>
+      <div class="metric-card"><div class="metric-label">Saldo</div><div class="metric-value ${ent-sai>=0?'green':'red'}">${fmtVal(ent-sai)}</div></div>
+      <div class="metric-card"><div class="metric-label">Lançamentos</div><div class="metric-value primary">${items.length}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card"><div style="font-weight:600;margin-bottom:12px;font-size:14px">Entradas por Categoria</div>
+        ${Object.entries(catEnt).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+            <span>${n}</span><span style="font-weight:600;color:var(--success)">${fmtVal(v)}</span></div>`).join('')||'<div style="color:var(--muted);font-size:13px">Nenhum registro</div>'}
+      </div>
+      <div class="card"><div style="font-weight:600;margin-bottom:12px;font-size:14px">Saídas por Categoria</div>
+        ${Object.entries(catSai).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+            <span>${n}</span><span style="font-weight:600;color:var(--danger)">${fmtVal(v)}</span></div>`).join('')||'<div style="color:var(--muted);font-size:13px">Nenhum registro</div>'}
+      </div>
+    </div>`;
+}
+
+// ===================== CRIANÇAS =====================
+async function salvarCrianca(){
+  const nome=document.getElementById('c-nome').value.trim();
+  const nasc=document.getElementById('c-nasc').value||null;
+  const resp=document.getElementById('c-resp').value.trim();
+  const tel=document.getElementById('c-tel').value.trim()||null;
+  const obs=document.getElementById('c-obs').value.trim()||null;
+  if(!nome||!resp){ showAlert('cri-alert','Preencha nome e responsável.','error'); return; }
+  setBtnLoading('cri-btn',true);
+  if(editCriancaId){
+    const {data:row,error}=await sb.from('criancas').update({nome,nasc,responsavel:resp,telefone:tel,observacoes:obs}).eq('id',editCriancaId).select().single();
+    if(error){ showAlert('cri-alert','Erro: '+error.message,'error'); }
+    else {
+      const idx=CACHE.criancas.findIndex(c=>c.id===editCriancaId);
+      if(idx>=0) CACHE.criancas[idx]=row;
+      showAlert('cri-alert','Criança atualizada!');
+      cancelarEditCrianca();
+      populateSelects();
+      renderCriancas();
+    }
+  } else {
+    const {data:row,error}=await sb.from('criancas').insert({nome,nasc,responsavel:resp,telefone:tel,observacoes:obs}).select().single();
+    if(error){ showAlert('cri-alert','Erro: '+error.message,'error'); }
+    else {
+      CACHE.criancas.push(row);
+      CACHE.criancas.sort((a,b)=>a.nome.localeCompare(b.nome));
+      showAlert('cri-alert','Criança cadastrada!');
+      ['c-nome','c-nasc','c-resp','c-tel','c-obs'].forEach(id=>document.getElementById(id).value='');
+      populateSelects();
+      renderCriancas();
+    }
+  }
+  setBtnLoading('cri-btn',false,'💾 <span id="cri-btn-txt">Cadastrar</span>');
+}
+function editarCrianca(id){
+  const c=CACHE.criancas.find(x=>x.id===id); if(!c) return;
+  editCriancaId=id;
+  document.getElementById('c-nome').value=c.nome;
+  document.getElementById('c-nasc').value=c.nasc||'';
+  document.getElementById('c-resp').value=c.responsavel;
+  document.getElementById('c-tel').value=c.telefone||'';
+  document.getElementById('c-obs').value=c.observacoes||'';
+  document.getElementById('cri-form-title').textContent='Editar Criança';
+  document.getElementById('cri-btn-txt').textContent='Atualizar';
+  document.getElementById('cri-cancel').style.display='inline-flex';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function cancelarEditCrianca(){
+  editCriancaId=null;
+  ['c-nome','c-nasc','c-resp','c-tel','c-obs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cri-form-title').textContent='Nova Criança';
+  document.getElementById('cri-btn-txt').textContent='Cadastrar';
+  document.getElementById('cri-cancel').style.display='none';
+}
+async function deletarCrianca(id){
+  if(!confirm('Excluir esta criança?')) return;
+  const {error}=await sb.from('criancas').delete().eq('id',id);
+  if(error){ alert('Erro: '+error.message); return; }
+  CACHE.criancas=CACHE.criancas.filter(c=>c.id!==id);
+  populateSelects(); renderCriancas();
+}
+function renderCriancas(){
+  const busca=document.getElementById('cri-busca').value.toLowerCase();
+  const lista=CACHE.criancas.filter(c=>c.nome.toLowerCase().includes(busca)||c.responsavel.toLowerCase().includes(busca));
+  document.getElementById('cri-count').textContent=`${lista.length} criança${lista.length!==1?'s':''}`;
+  const g=document.getElementById('kid-grid');
+  if(!lista.length){ g.innerHTML='<div class="empty-state" style="grid-column:1/-1">Nenhuma criança cadastrada</div>'; return; }
+  g.innerHTML=lista.map(c=>{
+    const idade=c.nasc?Math.floor((Date.now()-new Date(c.nasc))/(365.25*24*3600*1000)):null;
+    return `<div class="kid-card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="kid-avatar" style="background:${avatarColor(c.nome)};color:#fff">${initials(c.nome)}</div>
+        <div><div style="font-weight:600;font-size:15px">${c.nome}</div>
+          <div style="font-size:12px;color:var(--muted)">${idade!==null?`${idade} anos`:'Idade não informada'}</div></div>
+      </div>
+      <div style="font-size:13px;color:var(--muted)">👤 ${c.responsavel}</div>
+      ${c.telefone?`<div style="font-size:13px;color:var(--muted)">📞 ${c.telefone}</div>`:''}
+      ${c.observacoes?`<div style="font-size:12px;color:var(--warn);margin-top:6px;background:#fff9f0;border-radius:6px;padding:6px 8px">⚠ ${c.observacoes}</div>`:''}
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-secondary btn-sm" onclick="editarCrianca('${c.id}')">✏ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deletarCrianca('${c.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===================== DIÁRIO =====================
+const humorInfo={feliz:{label:'Feliz / Animada',color:'#16a34a'},normal:{label:'Normal / Calma',color:'#d97706'},triste:{label:'Triste / Quieta',color:'#dc2626'},agitado:{label:'Agitada / Hiperativa',color:'#7c3aed'}};
+const partInfo={excelente:{label:'Excelente',color:'#16a34a'},boa:{label:'Boa',color:'#2d6a4f'},regular:{label:'Regular',color:'#d97706'},baixa:{label:'Baixa',color:'#dc2626'}};
+function diarioTab(tab,btn){
+  document.querySelectorAll('#diario .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('diario-novo').style.display=tab==='novo'?'block':'none';
+  document.getElementById('diario-ver').style.display=tab==='ver'?'block':'none';
+  if(tab==='ver') renderDiario();
+}
+async function salvarDiario(){
+  const crianca_id=document.getElementById('d-crianca').value;
+  const data=document.getElementById('d-data').value;
+  const humor=document.getElementById('d-humor').value;
+  const participacao=document.getElementById('d-participacao').value;
+  const anotacao=document.getElementById('d-anotacao').value.trim();
+  const recado=document.getElementById('d-recado').value.trim()||null;
+  const necessidade=document.getElementById('d-nec').value.trim()||null;
+  if(!crianca_id||!data||!anotacao){ showAlert('diario-alert','Selecione a criança, data e escreva as anotações.','error'); return; }
+  setBtnLoading('diario-btn',true);
+  const {data:row,error}=await sb.from('diario').insert({crianca_id,data,humor,participacao,anotacao,recado,necessidade}).select().single();
+  if(error){ showAlert('diario-alert','Erro: '+error.message,'error'); }
+  else {
+    CACHE.diario.unshift(row);
+    showAlert('diario-alert','Registro salvo com sucesso!');
+    document.getElementById('d-crianca').value='';
+    document.getElementById('d-anotacao').value='';
+    document.getElementById('d-recado').value='';
+    document.getElementById('d-nec').value='';
+  }
+  setBtnLoading('diario-btn',false,'📓 Salvar Registro');
+}
+async function deletarDiario(id){
+  if(!confirm('Excluir este registro?')) return;
+  const {error}=await sb.from('diario').delete().eq('id',id);
+  if(error){ alert('Erro: '+error.message); return; }
+  CACHE.diario=CACHE.diario.filter(d=>d.id!==id);
+  renderDiario();
+}
+function renderDiario(){
+  const criancaFil=document.getElementById('dv-crianca').value;
+  const mesFil=document.getElementById('dv-mes').value;
+  let items=CACHE.diario.filter(d=>{
+    if(criancaFil&&d.crianca_id!==criancaFil) return false;
+    if(mesFil&&!d.data.startsWith(mesFil)) return false;
+    return true;
+  });
+  const lista=document.getElementById('diario-lista');
+  if(!items.length){ lista.innerHTML='<div class="empty-state">Nenhum registro encontrado</div>'; return; }
+  lista.innerHTML=items.map(d=>{
+    const h=humorInfo[d.humor]||{label:d.humor,color:'#888'};
+    const p=partInfo[d.participacao]||{label:d.participacao,color:'#888'};
+    return `<div class="diario-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div><div style="font-weight:600;font-size:15px">${getCriancaNome(d.crianca_id)}</div>
+          <div style="font-size:12px;color:var(--muted)">📅 ${fmtData(d.data)}</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:12px;padding:3px 10px;border-radius:999px;background:${h.color}22;color:${h.color};font-weight:600">${h.label}</span>
+          <button class="btn btn-danger btn-sm" onclick="deletarDiario('${d.id}')">✕</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Participação: <span style="color:${p.color};font-weight:600">${p.label}</span></div>
+      <div style="font-size:14px;line-height:1.6;margin-bottom:${d.recado||d.necessidade?'10px':'0'}">${d.anotacao}</div>
+      ${d.recado?`<div style="background:#f0fdf4;border-radius:8px;padding:8px 12px;font-size:13px;margin-bottom:6px;border-left:3px solid var(--success)"><strong>Recado aos pais:</strong> ${d.recado}</div>`:''}
+      ${d.necessidade?`<div style="background:#fff9f0;border-radius:8px;padding:8px 12px;font-size:13px;border-left:3px solid var(--warn)"><strong>Atenção:</strong> ${d.necessidade}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ===================== PRESENÇA =====================
+async function carregarPresenca(){
+  const data=document.getElementById('pres-data').value;
+  if(!data){ document.getElementById('pres-grid').innerHTML='<div style="color:var(--muted);font-size:14px;padding:12px">Selecione uma data</div>'; return; }
+  // Busca presença desta data do cache
+  presencaTemp={};
+  CACHE.presenca.filter(p=>p.data===data).forEach(p=>{ presencaTemp[p.crianca_id]=p.presente; });
+  renderPresencaGrid(data);
+  renderPresHistorico();
+}
+function renderPresencaGrid(data){
+  const grid=document.getElementById('pres-grid');
+  if(!CACHE.criancas.length){ grid.innerHTML='<div style="color:var(--muted);font-size:14px">Nenhuma criança cadastrada</div>'; return; }
+  const presentes=CACHE.criancas.filter(c=>presencaTemp[c.id]===true).length;
+  document.getElementById('pres-resumo').textContent=`${presentes} de ${CACHE.criancas.length} presentes`;
+  grid.innerHTML=CACHE.criancas.map(c=>{
+    const presente=presencaTemp[c.id]===true;
+    return `<div class="presenca-item ${presente?'presente':''}" id="pi-${c.id}" onclick="togglePresenca('${c.id}')">
+      <div class="kid-avatar" style="background:${avatarColor(c.nome)};color:#fff;width:36px;height:36px;font-size:13px;flex-shrink:0">${initials(c.nome)}</div>
+      <div><div class="pname">${c.nome}</div><div class="pres-badge">${presente?'✓ Presente':'Ausente'}</div></div>
+    </div>`;
+  }).join('');
+}
+function togglePresenca(criancaId){
+  presencaTemp[criancaId]=!presencaTemp[criancaId];
+  const data=document.getElementById('pres-data').value;
+  renderPresencaGrid(data);
+}
+function marcarTodos(presente){
+  CACHE.criancas.forEach(c=>{ presencaTemp[c.id]=presente; });
+  const data=document.getElementById('pres-data').value;
+  renderPresencaGrid(data);
+}
+async function salvarPresenca(){
+  const data=document.getElementById('pres-data').value;
+  if(!data){ alert('Selecione uma data'); return; }
+  setBtnLoading('pres-btn',true);
+  // Upsert cada criança
+  const rows=CACHE.criancas.map(c=>({crianca_id:c.id,data,presente:presencaTemp[c.id]===true}));
+  const {error}=await sb.from('presenca').upsert(rows,{onConflict:'crianca_id,data'});
+  if(error){ alert('Erro ao salvar: '+error.message); }
+  else {
+    // Atualiza cache
+    rows.forEach(r=>{
+      const idx=CACHE.presenca.findIndex(p=>p.crianca_id===r.crianca_id&&p.data===r.data);
+      if(idx>=0) CACHE.presenca[idx]={...CACHE.presenca[idx],...r};
+      else CACHE.presenca.unshift(r);
+    });
+    alert('Presença salva com sucesso!');
+    renderPresHistorico();
+  }
+  setBtnLoading('pres-btn',false,'💾 Salvar');
+}
+function renderPresHistorico(){
+  const criancaFil=document.getElementById('phist-crianca').value;
+  const datas=[...new Set(CACHE.presenca.map(p=>p.data))].sort().reverse().slice(0,20);
+  const el=document.getElementById('pres-historico');
+  if(!datas.length){ el.innerHTML='<div style="color:var(--muted);font-size:13px">Nenhum registro de presença</div>'; return; }
+  if(criancaFil){
+    el.innerHTML=`<table><thead><tr><th>Data</th><th>Presença</th></tr></thead><tbody>${
+      datas.map(d=>{
+        const reg=CACHE.presenca.find(p=>p.crianca_id===criancaFil&&p.data===d);
+        const presente=reg?.presente;
+        return `<tr><td>${fmtData(d)}</td><td><span class="badge ${presente?'badge-in':'badge-out'}">${presente?'Presente':'Ausente'}</span></td></tr>`;
+      }).join('')
+    }</tbody></table>`;
+  } else {
+    el.innerHTML=`<table><thead><tr><th>Data</th><th>Presentes</th><th>Ausentes</th><th>Total</th></tr></thead><tbody>${
+      datas.map(d=>{
+        const pres=CACHE.presenca.filter(p=>p.data===d&&p.presente===true).length;
+        const total=CACHE.criancas.length;
+        return `<tr><td>${fmtData(d)}</td><td style="color:var(--success);font-weight:600">${pres}</td><td style="color:var(--danger)">${total-pres}</td><td>${total}</td></tr>`;
+      }).join('')
+    }</tbody></table>`;
+  }
+}
+
+// ===================== CATEGORIAS =====================
+async function salvarCategoria(){
+  const nome=document.getElementById('cat-nome').value.trim();
+  const tipo=document.getElementById('cat-tipo').value;
+  if(!nome){ showAlert('cat-alert','Informe o nome da categoria.','error'); return; }
+  if(CACHE.categorias.find(c=>c.nome.toLowerCase()===nome.toLowerCase())){ showAlert('cat-alert','Já existe uma categoria com este nome.','error'); return; }
+  const {data:row,error}=await sb.from('categorias').insert({nome,tipo}).select().single();
+  if(error){ showAlert('cat-alert','Erro: '+error.message,'error'); return; }
+  CACHE.categorias.push(row);
+  CACHE.categorias.sort((a,b)=>a.nome.localeCompare(b.nome));
+  document.getElementById('cat-nome').value='';
+  showAlert('cat-alert','Categoria adicionada!');
+  renderCategorias(); populateSelects();
+}
+async function deletarCategoria(id){
+  const emUso=CACHE.lancamentos.some(l=>l.categoria_id===id);
+  if(emUso){ alert('Não é possível excluir: esta categoria está em uso em lançamentos.'); return; }
+  if(!confirm('Excluir categoria?')) return;
+  const {error}=await sb.from('categorias').delete().eq('id',id);
+  if(error){ alert('Erro: '+error.message); return; }
+  CACHE.categorias=CACHE.categorias.filter(c=>c.id!==id);
+  renderCategorias(); populateSelects();
+}
+function renderCategorias(){
+  const ent=CACHE.categorias.filter(c=>c.tipo==='entrada');
+  const sai=CACHE.categorias.filter(c=>c.tipo==='saida');
+  const render=(lista,titulo,cor)=>`
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:12px;font-size:14px;color:${cor}">${titulo}</div>
+      ${lista.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px">
+        <span>${c.nome}</span>
+        <button class="btn btn-danger btn-sm" onclick="deletarCategoria('${c.id}')">✕</button>
+      </div>`).join('')}
+      ${!lista.length?'<div style="color:var(--muted);font-size:13px">Nenhuma categoria</div>':''}
+    </div>`;
+  document.getElementById('cat-grid').innerHTML=render(ent,'Entradas','var(--success)')+render(sai,'Saídas','var(--danger)');
+}
+
+// ===================== INIT =====================
+document.getElementById('l-data').value=today();
+document.getElementById('d-data').value=today();
+document.getElementById('pres-data').value=today();
+loadAll();
+</script>
+</body>
+</html>
