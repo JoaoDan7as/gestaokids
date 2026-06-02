@@ -251,10 +251,10 @@ tr:hover td{background:#fafaf8}
   <div class="card" style="margin-bottom:20px">
     <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:14px" id="cri-form-title">Nova Criança</div>
     <div class="form-grid">
-      <div class="form-group"><label>Nome da Criança</label><input type="text" id="c-nome"></div>
-      <div class="form-group"><label>Data de Nascimento</label><input type="date" id="c-nasc"></div>
-      <div class="form-group"><label>Responsável</label><input type="text" id="c-resp"></div>
-      <div class="form-group"><label>Telefone</label><input type="text" id="c-tel" placeholder="(21) 9 9999-9999"></div>
+      <div class="form-group"><label>Nome da Criança <span style="color:var(--danger)">*</span></label><input type="text" id="c-nome"></div>
+      <div class="form-group"><label>Data de Nascimento <span style="font-weight:400;color:var(--muted)">(opcional)</span></label><input type="date" id="c-nasc"></div>
+      <div class="form-group"><label>Responsável <span style="font-weight:400;color:var(--muted)">(opcional)</span></label><input type="text" id="c-resp"></div>
+      <div class="form-group"><label>Telefone <span style="font-weight:400;color:var(--muted)">(opcional)</span></label><input type="text" id="c-tel" placeholder="(21) 9 9999-9999"></div>
       <div class="form-group full"><label>Observações / Alergias / Necessidades</label>
         <textarea id="c-obs" rows="2" placeholder="Ex: alergia a amendoim..."></textarea></div>
     </div>
@@ -652,7 +652,7 @@ async function salvarCrianca(){
   const resp=document.getElementById('c-resp').value.trim();
   const tel=document.getElementById('c-tel').value.trim()||null;
   const obs=document.getElementById('c-obs').value.trim()||null;
-  if(!nome||!resp){ showAlert('cri-alert','Preencha nome e responsável.','error'); return; }
+  if(!nome){ showAlert('cri-alert','Preencha o nome da criança.','error'); return; }
   setBtnLoading('cri-btn',true);
   if(editCriancaId){
     const {data:row,error}=await sb.from('criancas').update({nome,nasc,responsavel:resp,telefone:tel,observacoes:obs}).eq('id',editCriancaId).select().single();
