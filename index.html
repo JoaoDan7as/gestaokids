@@ -98,6 +98,16 @@ tr:hover td{background:#fafaf8}
 .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.8);display:flex;align-items:center;justify-content:center;z-index:999;font-size:14px;color:var(--muted);gap:10px}
 .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* LOGIN */
+#login-wall{position:fixed;inset:0;background:var(--primary-dark);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:var(--surface);border-radius:20px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-logo{font-family:'DM Serif Display',serif;font-size:28px;color:var(--primary-dark);margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:28px}
+.login-box label{color:var(--muted);font-size:13px;font-weight:500;margin-bottom:6px;display:block}
+.login-box input{margin-bottom:16px}
+.login-error{font-size:13px;color:var(--danger);background:#fee2e2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:none}
+.logout-btn{font-size:12px;color:rgba(255,255,255,.5);background:transparent;border:none;cursor:pointer;padding:8px 12px;margin-top:16px;width:100%;text-align:left;font-family:'DM Sans',sans-serif}
+.logout-btn:hover{color:#fff}
 @media(max-width:900px){
   aside{width:200px}
   main{margin-left:200px;padding:18px}
@@ -107,6 +117,17 @@ tr:hover td{background:#fafaf8}
 </style>
 </head>
 <body>
+
+<div id="login-wall">
+  <div class="login-box">
+    <div class="login-logo">Gestão Kids</div>
+    <div class="login-sub">Igreja — Sistema de Gestão</div>
+    <div class="login-error" id="login-error">Senha incorreta. Tente novamente.</div>
+    <label>Senha de acesso</label>
+    <input type="password" id="login-senha" placeholder="Digite a senha..." onkeydown="if(event.key==='Enter')entrar()">
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="entrar()">Entrar</button>
+  </div>
+</div>
 
 <div class="loading-overlay" id="loading">
   <div class="spinner"></div>
@@ -129,6 +150,7 @@ tr:hover td{background:#fafaf8}
   <button class="menu-btn" onclick="openPage('presenca',this)">&#10003; Presença</button>
   <span class="nav-section">Sistema</span>
   <button class="menu-btn" onclick="openPage('categorias',this)">&#9670; Categorias</button>
+  <button class="logout-btn" onclick="sair()">&#x2192; Sair</button>
 </aside>
 
 <main>
@@ -915,11 +937,37 @@ function renderCategorias(){
   document.getElementById('cat-grid').innerHTML=render(ent,'Entradas','var(--success)')+render(sai,'Saídas','var(--danger)');
 }
 
+
+// ===================== LOGIN =====================
+const SENHA = 'clamar1';
+function checkLogin(){
+  if(sessionStorage.getItem('gk_auth')==='ok'){
+    document.getElementById('login-wall').style.display='none';
+    return true;
+  }
+  return false;
+}
+function entrar(){
+  const s=document.getElementById('login-senha').value;
+  if(s===SENHA){
+    sessionStorage.setItem('gk_auth','ok');
+    document.getElementById('login-wall').style.display='none';
+    loadAll();
+  } else {
+    document.getElementById('login-error').style.display='block';
+    document.getElementById('login-senha').value='';
+    document.getElementById('login-senha').focus();
+  }
+}
+function sair(){
+  sessionStorage.removeItem('gk_auth');
+  location.reload();
+}
 // ===================== INIT =====================
 document.getElementById('l-data').value=today();
 document.getElementById('d-data').value=today();
 document.getElementById('pres-data').value=today();
-loadAll();
+if(!checkLogin()){ /* aguarda login */ }
 </script>
 </body>
 </html>
