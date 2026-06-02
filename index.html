@@ -115,6 +115,12 @@ tr:hover td{background:#fafaf8}
 #hamburger{background:transparent;border:none;cursor:pointer;padding:6px;color:#fff;font-size:22px;line-height:1}
 #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150}
 
+/* CLASSES REUTILIZÁVEIS */
+.rq-grid{display:grid;grid-template-columns:120px 1fr 160px 120px auto;gap:10px;align-items:end}
+.pres-action-bar{display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap}
+.two-col-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cat-form-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
+
 /* TABLET */
 @media(max-width:1024px){
   .charts-row{grid-template-columns:1fr}
@@ -123,7 +129,9 @@ tr:hover td{background:#fafaf8}
 
 /* MOBILE */
 @media(max-width:680px){
+  html,body{overflow-x:hidden;max-width:100vw}
   body{flex-direction:column}
+  *{max-width:100%}
   #topbar{display:flex}
   aside{
     position:fixed;top:0;left:0;height:100vh;width:260px;
@@ -132,35 +140,50 @@ tr:hover td{background:#fafaf8}
   }
   aside.open{transform:translateX(0)}
   #overlay.open{display:block}
-  main{margin-left:0;padding:72px 14px 80px;min-height:100vh}
+  main{margin-left:0;padding:70px 12px 24px;min-height:100vh;overflow-x:hidden}
   .page-header h2{font-size:22px}
   .cards-row{grid-template-columns:1fr 1fr}
   .charts-row{grid-template-columns:1fr}
-  .form-grid{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr !important}
   .filter-bar{flex-direction:column}
-  .filter-bar input,.filter-bar select{width:100%;min-width:unset}
+  .filter-bar input,.filter-bar select{width:100% !important;min-width:unset}
   .tabs{width:100%}
-  .tab{flex:1;text-align:center}
+  .tab{flex:1;text-align:center;padding:8px 6px}
   .kid-grid{grid-template-columns:1fr 1fr}
   .presenca-grid{grid-template-columns:1fr 1fr}
   .totals-bar{flex-direction:column;align-items:flex-start;gap:8px}
-  table{font-size:12px}
-  th,td{padding:8px 10px}
-  /* esconde colunas menos importantes no mobile */
-  th:nth-child(5),td:nth-child(5),
-  th:nth-child(4),td:nth-child(4){display:none}
+  .totals-bar span[style*="margin-left:auto"]{margin-left:0 !important}
+  table{font-size:12px;display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  th,td{padding:8px 10px;white-space:nowrap}
   .metric-value{font-size:22px}
   .card{padding:14px}
-  /* lançamento rápido vira coluna */
-  #lanc-rapido-grid{grid-template-columns:1fr 1fr !important}
-  .login-box{padding:28px 20px;margin:16px}
-  .charts-row .card canvas{height:180px !important}
+  .login-box{padding:28px 20px;margin:16px;max-width:calc(100vw - 32px)}
+  /* lançamento rápido: empilha tudo */
+  .rq-grid{grid-template-columns:1fr 1fr !important}
+  .rq-grid .form-group:nth-child(1){grid-column:1}
+  .rq-grid .form-group:nth-child(2){grid-column:1/-1}
+  .rq-grid .form-group:nth-child(3){grid-column:1}
+  .rq-grid .form-group:nth-child(4){grid-column:1}
+  .rq-grid button{grid-column:2;align-self:end}
+  /* presença action bar */
+  .pres-action-bar{flex-direction:column;align-items:stretch}
+  .pres-action-bar .form-group{width:100%}
+  .pres-action-bar .btn{width:100%;justify-content:center}
+  /* duas colunas viram uma */
+  .two-col-grid{grid-template-columns:1fr !important}
+  .cat-form-grid{grid-template-columns:1fr !important}
+  .cat-form-grid button{width:100%;margin-top:0}
+  /* esconde colunas menos importantes */
+  th:nth-child(5),td:nth-child(5),
+  th:nth-child(6),td:nth-child(6){display:none}
 }
 
-@media(max-width:380px){
+@media(max-width:400px){
   .cards-row{grid-template-columns:1fr}
   .kid-grid{grid-template-columns:1fr}
   .presenca-grid{grid-template-columns:1fr}
+  .rq-grid{grid-template-columns:1fr !important}
+  .rq-grid button{grid-column:1;width:100%}
 }
 </style>
 </head>
@@ -254,7 +277,7 @@ tr:hover td{background:#fafaf8}
   <!-- Rápido -->
   <div class="card" style="margin-bottom:16px;border-left:4px solid var(--primary)">
     <div style="font-size:13px;font-weight:600;color:var(--primary-dark);margin-bottom:12px">⚡ Lançamento Rápido</div>
-    <div style="display:grid;grid-template-columns:120px 1fr 160px 120px auto;gap:10px;align-items:end;flex-wrap:wrap">
+    <div class="rq-grid">
       <div class="form-group"><label>Tipo</label>
         <select id="rq-tipo"><option value="entrada">Entrada</option><option value="saida">Saída</option></select></div>
       <div class="form-group"><label>Descrição</label><input id="rq-desc" type="text" placeholder="Ex: Mensalidade Ana"></div>
@@ -393,7 +416,7 @@ tr:hover td{background:#fafaf8}
 <!-- PRESENÇA -->
 <section id="presenca" class="page">
   <div class="page-header"><h2>Lista de Presença</h2><p>Registre a presença das crianças por data</p></div>
-  <div style="display:flex;gap:12px;align-items:end;margin-bottom:16px;flex-wrap:wrap">
+  <div class="pres-action-bar">
     <div class="form-group" style="flex:0 0 200px">
       <label>Data</label><input type="date" id="pres-data" onchange="carregarPresenca()">
     </div>
@@ -417,13 +440,13 @@ tr:hover td{background:#fafaf8}
   <div class="page-header"><h2>Categorias</h2><p>Gerencie as categorias financeiras</p></div>
   <div id="cat-alert"></div>
   <div class="card" style="margin-bottom:20px">
-    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
+    <div class="cat-form-grid">
       <div class="form-group"><label>Nome da Categoria</label><input type="text" id="cat-nome" placeholder="Ex: Dízimo, Festa Junina..."></div>
       <div class="form-group"><label>Tipo</label><select id="cat-tipo"><option value="entrada">Entrada</option><option value="saida">Saída</option></select></div>
       <button class="btn btn-primary" onclick="salvarCategoria()" style="height:42px;margin-top:24px">+ Adicionar</button>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="cat-grid"></div>
+  <div class="two-col-grid" id="cat-grid"></div>
 </section>
 
 </main>
@@ -708,7 +731,7 @@ function renderRelatorio(){
       <div class="metric-card"><div class="metric-label">Saldo</div><div class="metric-value ${ent-sai>=0?'green':'red'}">${fmtVal(ent-sai)}</div></div>
       <div class="metric-card"><div class="metric-label">Lançamentos</div><div class="metric-value primary">${items.length}</div></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="two-col-grid">
       <div class="card"><div style="font-weight:600;margin-bottom:12px;font-size:14px">Entradas por Categoria</div>
         ${Object.entries(catEnt).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`
           <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
